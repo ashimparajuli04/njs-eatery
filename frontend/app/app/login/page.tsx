@@ -8,7 +8,7 @@ export default function Dashboard() {
       <div
         className="
           absolute inset-0
-          
+          bg-[url('/food-doodle.svg')]
           bg-repeat
           bg-center
           filter blur-[3px]

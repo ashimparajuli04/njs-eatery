@@ -46,17 +46,14 @@ def create_user(session: Session, data: UserCreate) -> User:
     session.refresh(user)
     return user
 
-
-
+def get_users(session: Session):
+    return session.exec(select(User)).all()
 
 def get_user_by_email(session: Session, email: str):
     return session.exec(
         select(User).where(User.email == email)
     ).first()
-
-    
-def get_users(session: Session):
-    return session.exec(select(User)).all()
-    
+   
 def get_user_by_id(session: Session, user_id: int) -> User | None:
     return session.get(User, user_id)
+

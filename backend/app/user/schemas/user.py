@@ -16,3 +16,6 @@ class UserPublic(SQLModel):
     middle_name: str | None = None
     last_name: str
     role: UserRole
+
+class UserAdmin(UserPublic):
+    is_active: bool

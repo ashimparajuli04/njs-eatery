@@ -13,7 +13,7 @@ from app.database import get_session
 from app.auth.models.token import TokenData
 from app.auth.utils.auth_utils import verify_password
 
-from app.user.models.user import User
+from app.user.models.user import User, UserRole
 from app.user.services.user_service import get_user_by_email
 
 
@@ -60,7 +60,6 @@ def create_access_token(
         algorithm=ALGORITHM,
     )
 
-
 def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     session: SessionDep,
@@ -96,4 +95,28 @@ def get_current_user(
 def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ):
+    if not current_user.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail="Inactive user",
+        )
     return current_user
+
+def require_role(*roles: UserRole):
+    def checker(user: User = Depends(get_current_active_user)):
+        print("USER ROLE:", user.role)
+        print("REQUIRED ROLES:", roles)
+
+        if user.role not in roles:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return user
+    return checker
+
+
+    
+def require_admin():
+    return Depends(require_role(UserRole.ADMIN))
+
+def require_staff():
+    return Depends(require_role(UserRole.ADMIN, UserRole.EMPLOYEE))
+
