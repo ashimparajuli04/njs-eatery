@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.tablesession.models.table_session import TableSession
+    from app.service_flow.tablesession.models.table_session import TableSession
 
 class DiningTable(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

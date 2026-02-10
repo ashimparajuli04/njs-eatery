@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.menu.models.menu_category import MenuCategory
     from app.menu.models.menu_subcategory import MenuSubCategory
-    from app.orderitem.models.order_item import OrderItem
+    from app.service_flow.orderitem.models.order_item import OrderItem
 
 class MenuItem(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -25,7 +25,4 @@ class MenuItem(SQLModel, table=True):
     )
     subcategory: "MenuSubCategory" = Relationship(
         back_populates="items"
-    )
-    order_items: list["OrderItem"] = Relationship(
-        back_populates="menu_item"
     )

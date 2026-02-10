@@ -3,8 +3,8 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.diningtable.models.dining_table import DiningTable
-    from app.order.models.order import Order
+    from app.service_flow.diningtable.models.dining_table import DiningTable
+    from app.service_flow.order.models.order import Order
 
 
 class TableSession(SQLModel, table=True):

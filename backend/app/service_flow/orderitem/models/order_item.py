@@ -2,7 +2,7 @@ from sqlmodel import Field, Relationship, SQLModel
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.order.models.order import Order
+    from app.service_flow.order.models.order import Order
     from app.menu.models.menu_item import MenuItem
 
 class OrderItem(SQLModel, table=True):
@@ -21,7 +21,7 @@ class OrderItem(SQLModel, table=True):
     
     # Relationships
     order: "Order" = Relationship(back_populates="items")
-    menu_item: "MenuItem" = Relationship(back_populates="order_items")
+    menu_item: "MenuItem" = Relationship()
     
     # Helper property
     @property

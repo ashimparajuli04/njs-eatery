@@ -16,7 +16,11 @@ router = APIRouter(
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
-@router.post("/", response_model=MenuItem)
+@router.post(
+    "/",
+    response_model=MenuItem,
+    dependencies=[Depends(require_admin)]
+)
 def create_item(item: MenuItemCreate, session: SessionDep):
     return create_menu_item(session, item)
     

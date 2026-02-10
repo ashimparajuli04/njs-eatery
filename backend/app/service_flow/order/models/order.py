@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 from enum import Enum
 
 if TYPE_CHECKING:
-    from app.tablesession.models.table_session import TableSession
-    from app.orderitem.models.order_item import OrderItem
+    from app.service_flow.tablesession.models.table_session import TableSession
+    from app.service_flow.orderitem.models.order_item import OrderItem
 
 class OrderStatus(str, Enum):
     PENDING = "pending"   # Order placed, being prepared

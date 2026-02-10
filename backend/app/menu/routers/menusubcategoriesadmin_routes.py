@@ -16,7 +16,11 @@ router = APIRouter(
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
-@router.post("/", response_model=MenuSubCategory)
+@router.post(
+    "/",
+    response_model=MenuSubCategory,
+    dependencies=[Depends(require_admin)]
+)
 def create_menu_subcategory(
     data: MenuSubCategoryCreate,
     session: Session = Depends(get_session)

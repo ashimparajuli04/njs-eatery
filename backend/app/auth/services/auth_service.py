@@ -114,8 +114,11 @@ def require_role(*roles: UserRole):
 
 
     
-def require_admin():
-    return Depends(require_role(UserRole.ADMIN))
+def require_admin(user: User = Depends(get_current_active_user)):
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return user
+
 
 def require_staff():
     return Depends(require_role(UserRole.ADMIN, UserRole.EMPLOYEE))

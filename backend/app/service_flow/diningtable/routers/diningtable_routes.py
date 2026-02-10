@@ -7,8 +7,8 @@ from sqlalchemy.orm import selectinload
 from app.auth.services.auth_service import get_current_active_user
 from app.database import get_session
 
-from app.diningtable.schemas.dining_table import DiningTableRead
-from app.diningtable.models.dining_table import DiningTable
+from app.service_flow.diningtable.schemas.dining_table import DiningTableRead
+from app.service_flow.diningtable.models.dining_table import DiningTable
 
 
 

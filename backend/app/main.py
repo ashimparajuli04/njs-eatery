@@ -5,7 +5,7 @@ from app.database import init_db
 from app.menu.routers import menuitems_routes, menucategories_routes, menusubcategories_routes, menucategoriesadmin_routes, menusubcategoriesadmin_routes, menuitemsadmin_routes
 from app.user.routers import user_routes, useradmin_routes
 from app.auth.routers import auth_routes
-from app.diningtable.routers import diningtable_routes, diningtableadmin_routes
+from app.service_flow.diningtable.routers import diningtable_routes, diningtableadmin_routes
 
 app = FastAPI()
 
