@@ -15,7 +15,8 @@ import {
   Plus, 
   Trash2,
   DollarSign,
-  UtensilsCrossed 
+  UtensilsCrossed, 
+  Pencil
 } from "lucide-react"
 
 type OrderItem = {
@@ -49,6 +50,54 @@ export default function TableSessionPage() {
   const sessionId = params.id
   const queryClient = useQueryClient()
   const [customerName, setCustomerName] = useState("")
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
+  const [selectedItems, setSelectedItems] = useState<Record<number, number>>({})
+  
+  const increaseQty = (id: number) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [id]: (prev[id] || 0) + 1
+    }))
+  }
+  
+  const decreaseQty = (id: number) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [id]: Math.max((prev[id] || 0) - 1, 0)
+    }))
+  }
+
+  const handleAddToOrder = async () => {
+    if (!selectedOrderId) return
+  
+    const itemsToAdd = Object.entries(selectedItems)
+      .filter(([_, qty]) => qty > 0)
+  
+    for (const [menuId, qty] of itemsToAdd) {
+      await addItemMutation.mutateAsync({
+        orderId: selectedOrderId,
+        menuItemId: Number(menuId),
+        quantity: qty,
+        note: ""
+      })
+    }
+  
+    setIsAddModalOpen(false)
+  }
+
+  const closeSessionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(
+        `/table-sessions/${sessionId}/close`
+      )
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tableSession", sessionId] })
+    },
+  })
+
 
   // Fetch table session
   const { data: session, isLoading } = useQuery<Session>({
@@ -277,7 +326,7 @@ export default function TableSessionPage() {
                                 <span className="text-muted-foreground">@</span>{" "}
                                 <span className="font-medium">₹{item.price_at_time}</span>
                               </div>
-                              <div className="text-right min-w-[8px]">
+                              <div className="text-right min-w-2">
                                 <p className="font-bold">₹{item.line_total}</p>
                               </div>
                             </div>
@@ -292,32 +341,35 @@ export default function TableSessionPage() {
                   </CardContent>
 
                   <CardFooter className="border-t pt-4 flex justify-between">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
-                        // TODO: Open modal to add items
-                        // For now, adding a test item
-                        addItemMutation.mutate({
-                          orderId: order.id,
-                          menuItemId: 80,
-                          quantity: 1,
-                          note: "Test item"
-                        })
+                        setSelectedOrderId(order.id)
+                        setSelectedItems({})
+                        setIsAddModalOpen(true)
                       }}
-                      disabled={addItemMutation.isPending}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      {addItemMutation.isPending ? "Adding..." : "Add Item"}
+                      Add Item
                     </Button>
-                    <Button variant="destructive"
-                      size="sm"
-                      onClick={() => deleteOrderMutation.mutate(order.id)}
-                      disabled={deleteOrderMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Order
-                    </Button>
+                    <div className="flex gap-3">
+                      <Button variant="outline"
+                        size="sm"
+                        
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Edit Order
+                      </Button>
+                      <Button variant="destructive"
+                        size="sm"
+                        onClick={() => deleteOrderMutation.mutate(order.id)}
+                        disabled={deleteOrderMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Order
+                      </Button>
+                    </div>
                   </CardFooter>
                 </Card>
               ))}
@@ -347,8 +399,12 @@ export default function TableSessionPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex gap-3 justify-end">
-              <Button variant="outline">
-                Close Session
+              <Button
+                variant="outline"
+                onClick={() => closeSessionMutation.mutate()}
+                disabled={closeSessionMutation.isPending}
+              >
+                {closeSessionMutation.isPending ? "Closing..." : "Close Session"}
               </Button>
               <Button className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
@@ -358,6 +414,72 @@ export default function TableSessionPage() {
           </CardContent>
         </Card>
       </div>
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <Card className="w-[95%] h-[90%] overflow-y-auto p-6">
+            <CardHeader>
+              <CardTitle className="text-2xl">
+                Select Items
+              </CardTitle>
+            </CardHeader>
+      
+            <CardContent className="space-y-4">
+              {menuItems?.map((item: any) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between items-center border p-4 rounded-lg"
+                >
+                  <div>
+                    <p className="font-semibold">{item.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      ₹{item.price}
+                    </p>
+                  </div>
+      
+                  <div className="flex items-center gap-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => decreaseQty(item.id)}
+                    >
+                      -
+                    </Button>
+      
+                    <span className="w-6 text-center">
+                      {selectedItems[item.id] || 0}
+                    </span>
+      
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => increaseQty(item.id)}
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+      
+            <CardFooter className="flex justify-between mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsAddModalOpen(false)}
+              >
+                Cancel
+              </Button>
+      
+              <Button
+                onClick={handleAddToOrder}
+                disabled={addItemMutation.isPending}
+              >
+                Add To Order
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )}
+
     </div>
   )
 }

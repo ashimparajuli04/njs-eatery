@@ -41,6 +41,25 @@ def creating_order(table_session_id: int, session: SessionDep):
         table_session_id,
         session,
     )
+
+@router.post(
+    "/{session_id}/close",
+    dependencies=[Depends(get_current_active_user)]
+)
+def close_table_session(session_id: int, session: SessionDep):
+    tablesession = session.get(TableSession, session_id)
+
+    if not tablesession:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if tablesession.ended_at is not None:
+        raise HTTPException(status_code=400, detail="Session already closed")
+
+    tablesession.close_session()
+
+    session.add(tablesession)
+    session.commit()
+    session.refresh(tablesession)
     
 @router.get(
     "/{session_id}",
