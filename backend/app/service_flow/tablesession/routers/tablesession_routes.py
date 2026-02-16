@@ -12,7 +12,7 @@ from app.service_flow.tablesession.models.table_session import TableSession
 from app.service_flow.tablesession.schemas.table_session import TableSessionCreate, TableSessionPagination, TableSessionRead, TableSessionUpdate
 from app.service_flow.tablesession.services.tablesession_service import create_table_session, delete_table_session_hard, get_table_session_by_id, update_table_session
 
-from app.service_flow.order.models.order import Order
+from app.service_flow.order.models.order import Order, OrderStatus
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
@@ -54,12 +54,24 @@ def close_table_session(session_id: int, session: SessionDep):
 
     if tablesession.ended_at is not None:
         raise HTTPException(status_code=400, detail="Session already closed")
+        
+    unserved_orders = [
+        order for order in tablesession.orders
+        if order.status != OrderStatus.SERVED
+    ]
+
+    if unserved_orders:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot close session: all orders must be served"
+        )
 
     tablesession.close_session()
 
     session.add(tablesession)
     session.commit()
     session.refresh(tablesession)
+    
 
 @router.get(
     "/history/paginated",

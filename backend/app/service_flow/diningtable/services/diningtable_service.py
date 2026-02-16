@@ -14,6 +14,7 @@ def create_table(session: Session, data: DiningTableCreate) -> DiningTable:
     # 3. create user
     table = DiningTable(
         number=data.number,
+        type=data.type
     )
 
     session.add(table)

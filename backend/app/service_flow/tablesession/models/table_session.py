@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 class TableSession(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
-    table_id: int = Field(
+    table_id: int | None = Field(
+        default = None,
         foreign_key="diningtable.id",
     )
     customer_id: int | None = Field(
@@ -60,6 +61,7 @@ class TableSession(SQLModel, table=True):
         """Finalize the session and update customer stats"""
         self.ended_at = datetime.now(timezone.utc)
         self.final_bill = sum(order.total_amount for order in self.orders)
+        self.table_id = None
         
         # Update customer stats if customer exists
         if self.customer:

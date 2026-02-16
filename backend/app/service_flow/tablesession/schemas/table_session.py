@@ -10,7 +10,7 @@ class TableSessionUpdate(SQLModel):
     
 class TableSessionRead(SQLModel):
     id: int
-    table_id: int
+    table_id: int | None
     customer_id: int | None
     total_bill: float
     final_bill: float | None = None
