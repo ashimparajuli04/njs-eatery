@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    fetch("http://localhost:8000/users/me", {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))

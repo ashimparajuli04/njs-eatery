@@ -2,7 +2,7 @@ from typing import Annotated
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from jwt.exceptions import InvalidTokenError
+from jwt import PyJWTError
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -86,7 +86,7 @@ def get_current_user(
 
         token_data = TokenData(email=email)
 
-    except InvalidTokenError:
+    except PyJWTError:
         raise credentials_exception
 
     user = get_user_by_email(session, token_data.email)
