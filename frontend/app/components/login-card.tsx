@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import api from "@/lib/api"
-import { Coffee, ArrowRight, ArrowLeft } from "lucide-react"
+import { Coffee, ArrowRight, ArrowLeft, Eye, EyeOff } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -17,21 +18,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export function LoginCard() {
   const router = useRouter()
 
+  // Mobile welcome screen state
+  const [showMobileForm, setShowMobileForm] = useState(false)
+  
   const [authMode, setAuthMode] = useState<"login" | "signup">("login")
   const [signupStep, setSignupStep] = useState<1 | 2>(1)
 
@@ -44,8 +39,9 @@ export function LoginCard() {
   const [emailInput, setEmailInput] = useState("")
   const [passwordInput, setPasswordInput] = useState("")
 
-  const [showAlert, setShowAlert] = useState(false)
-  const [alertMessage, setAlertMessage] = useState("")
+  // Password visibility states
+  const [showLoginPassword, setShowLoginPassword] = useState(false)
+  const [showSignupPassword, setShowSignupPassword] = useState(false)
 
   const switchMode = (mode: "login" | "signup") => {
     setAuthMode(mode)
@@ -79,12 +75,16 @@ export function LoginCard() {
 
     onSuccess: (data) => {
       localStorage.setItem("access_token", data.access_token)
+      toast.success("Welcome back!", {
+        description: "You've been logged in successfully.",
+      })
       router.push("/dashboard")
     },
 
     onError: () => {
-      setAlertMessage("Invalid email or password.")
-      setShowAlert(true)
+      toast.error("Login failed", {
+        description: "Invalid email or password. Please try again.",
+      })
     },
   })
 
@@ -103,21 +103,24 @@ export function LoginCard() {
 
     onSuccess: () => {
       switchMode("login")
-      setAlertMessage("Account created successfully! Please login.")
-      setShowAlert(true)
+      setEmailInput(signUpEmailInput) // Pre-fill email for convenience
+      toast.success("Account created successfully!", {
+        description: "Please login with your new credentials.",
+      })
     },
 
     onError: () => {
-      setAlertMessage("Signup failed. Please check your details.")
-      setShowAlert(true)
+      toast.error("Signup failed", {
+        description: "Please check your details and try again.",
+      })
     },
   })
 
   return (
-    <Card className="w-full max-w-5xl flex flex-row px-8 relative overflow-hidden bg-nj-cream shadow-2xl border-2 border-stone-200/50">
+    <Card className="w-full max-w-5xl flex flex-col md:flex-row px-4 md:px-8 relative overflow-hidden bg-nj-cream shadow-2xl border-2 border-stone-200/50">
 
-      {/* LEFT IMAGE with gradient overlay */}
-      <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+      {/* LEFT IMAGE with gradient overlay - Desktop always visible */}
+      <div className="hidden md:flex flex-1 relative items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent z-10" />
         <Image
           src="/hello.svg"
@@ -133,10 +136,40 @@ export function LoginCard() {
         </div>
       </div>
 
-      {/* RIGHT CARD with animation */}
-      <Card className="flex-1 min-h-[28rem] shadow-none border-l-2 border-stone-200/50 animate-in slide-in-from-right duration-500">
+      {/* MOBILE: Welcome Screen with SVG - shown when form is hidden */}
+      {!showMobileForm && (
+        <div className="md:hidden w-full min-h-[500px] relative flex flex-col items-center justify-center p-8 animate-in fade-in duration-500">
+          {/* Restaurant SVG/Logo */}
+          <div className="relative w-full h-96 mb-8">
+            <Image
+              src="/hello.svg"
+              alt="NJ'S Café and Restaurant"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
 
-        <CardHeader className="space-y-3">
+          {/* Get Started Button */}
+          <Button
+            onClick={() => setShowMobileForm(true)}
+            className="w-full max-w-sm bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white shadow-md hover:shadow-lg transition-all duration-200 group"
+          >
+            <span className="flex items-center gap-2">
+              Get Started
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </Button>
+        </div>
+      )}
+
+      {/* RIGHT CARD with animation - Always visible on desktop, conditional on mobile */}
+      <Card className={`
+        ${showMobileForm ? 'flex' : 'hidden md:flex'}
+        flex-1 min-h-[28rem] shadow-none md:border-l-2 border-stone-200/50 animate-in slide-in-from-right duration-500
+      `}>
+
+        <CardHeader className="space-y-3 px-6 pt-6">
           <div className="flex items-center gap-2">
             <div className="h-1 w-12 bg-gradient-to-r from-amber-600 to-amber-400 rounded-full" />
           </div>
@@ -158,18 +191,20 @@ export function LoginCard() {
           </CardDescription>
 
           <CardAction className="pt-2">
-            <span className="text-sm text-stone-600">
-              {authMode === "login" ? "Don't have an account?" : "Already have an account?"}
-            </span>
-            <Button
-              variant="link"
-              className="text-amber-700 hover:text-amber-800 font-semibold px-2"
-              onClick={() =>
-                switchMode(authMode === "login" ? "signup" : "login")
-              }
-            >
-              {authMode === "login" ? "Sign Up" : "Login"}
-            </Button>
+            <div className="flex flex-col items-center text-center gap-1">
+              <span className="text-sm text-stone-600">
+                {authMode === "login" ? "Don't have an account?" : "Already have an account?"}
+              </span>
+              <Button
+                variant="link"
+                className="text-amber-700 hover:text-amber-800 font-semibold p-0 h-auto"
+                onClick={() =>
+                  switchMode(authMode === "login" ? "signup" : "login")
+                }
+              >
+                {authMode === "login" ? "Sign Up" : "Login"}
+              </Button>
+            </div>
           </CardAction>
         </CardHeader>
 
@@ -197,18 +232,33 @@ export function LoginCard() {
 
                 <div className="grid gap-2">
                   <Label className="text-stone-700 font-medium">Password</Label>
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    className="border-stone-300 focus:border-amber-500 transition-colors"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && emailInput && passwordInput) {
-                        loginMutation.mutate({ email: emailInput, password: passwordInput })
-                      }
-                    }}
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showLoginPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      className="border-stone-300 focus:border-amber-500 transition-colors pr-10"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && emailInput && passwordInput) {
+                          loginMutation.mutate({ email: emailInput, password: passwordInput })
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    >
+                      {showLoginPassword ? (
+                        <EyeOff className="h-4 w-4 text-stone-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-stone-400" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -274,13 +324,28 @@ export function LoginCard() {
                   <Label className="text-stone-700 font-medium">
                     Password <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
-                    value={signUpPasswordInput}
-                    onChange={(e) => setSignUpPasswordInput(e.target.value)}
-                    className="border-stone-300 focus:border-amber-500 transition-colors"
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showSignupPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={signUpPasswordInput}
+                      onChange={(e) => setSignUpPasswordInput(e.target.value)}
+                      className="border-stone-300 focus:border-amber-500 transition-colors pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    >
+                      {showSignupPassword ? (
+                        <EyeOff className="h-4 w-4 text-stone-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-stone-400" />
+                      )}
+                    </Button>
+                  </div>
                   <p className="text-xs text-stone-500 mt-1">
                     Must be at least 8 characters
                   </p>
@@ -323,8 +388,9 @@ export function LoginCard() {
             <Button
               onClick={() => {
                 if (!firstNameInput || !lastNameInput) {
-                  setAlertMessage("First and Last name are required.")
-                  setShowAlert(true)
+                  toast.error("Missing information", {
+                    description: "First and Last name are required.",
+                  })
                   return
                 }
                 setSignupStep(2)
@@ -390,23 +456,6 @@ export function LoginCard() {
 
         </CardFooter>
       </Card>
-
-      {/* ALERT */}
-      <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-        <AlertDialogContent className="border-stone-200">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-stone-900">
-              {alertMessage.includes("successfully") ? "Success!" : "Oops!"}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-stone-600">
-              {alertMessage}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-stone-300">Close</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
     </Card>
   )

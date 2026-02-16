@@ -92,9 +92,10 @@ export function AppSidebar() {
                 </h2>
                 <p className="text-xs text-stone-600 tracking-wide">& Restaurant</p>
               </div>
+              {/* X button - hidden on mobile, visible on desktop */}
               <button
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2 p-1.5 hover:bg-stone-100 rounded transition-colors"
+                className="hidden md:flex items-center gap-2 p-1.5 hover:bg-stone-100 rounded transition-colors"
               >
                 <X className="h-4 w-4 text-stone-600" />
               </button>

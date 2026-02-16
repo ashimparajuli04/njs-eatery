@@ -4,12 +4,14 @@ import { useParams } from "next/navigation"
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
+import { AxiosError } from "axios"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { User, Receipt, Plus, DollarSign, UtensilsCrossed, Phone, Coffee } from "lucide-react"
 import { OrderCard } from "@/components/tablesession/order-card"
+import { toast } from "sonner"
 
 type OrderItem = {
   id: number
@@ -141,7 +143,24 @@ export default function TableSessionPage() {
 
   const closeSessionMutation = useMutation({
     mutationFn: () => api.post(`/table-sessions/${sessionId}/close`),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      toast.success("Table freed successfully!", {
+        description: "The table is now available for new customers.",
+      })
+      invalidate()
+    },
+    onError: (error: AxiosError<{ detail: string }>) => {
+      // Check if it's the unserved orders error
+      if (error.response?.status === 400 && error.response?.data?.detail?.includes("all orders must be served")) {
+        toast.error("Cannot free table", {
+          description: "All orders must be served before closing the session.",
+        })
+      } else {
+        toast.error("Failed to free table", {
+          description: "An error occurred. Please try again.",
+        })
+      }
+    },
   })
 
   if (isLoading) {

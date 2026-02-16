@@ -32,7 +32,7 @@ import { useAuth } from "@/providers/auth-provider"
 
 type TableSessionHistory = {
   id: number
-  table_id: number
+  table_id: number | null
   customer_name: string | null
   final_bill: number
   started_at: string
@@ -222,7 +222,7 @@ export default function HistoryPage() {
                     <div className="space-y-1">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <UtensilsCrossed className="h-5 w-5 text-stone-600" />
-                        <span style={{ fontFamily: 'Georgia, serif' }}>Table {session.table_id}</span>
+                        <span style={{ fontFamily: 'Georgia, serif' }}>Table Session #{session.id}</span>
                       </CardTitle>
                       <div className="flex items-center gap-4 text-sm text-stone-600">
                         <div className="flex items-center gap-1.5">

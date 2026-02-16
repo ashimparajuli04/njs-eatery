@@ -31,12 +31,19 @@ export function TableCard({ table }: { table: Table }) {
     return `${hours}h ${mins}m`
   }
   
+  const createOrderMutation = useMutation({
+    mutationFn: async (table_session_id: number) => {
+      await api.post(`/table-sessions/${table_session_id}/orders`)
+    },
+  })
+  
   const createSessionMutation = useMutation({
     mutationFn: async () => {
       const res = await api.post("/table-sessions", { table_id: table.id })
       return res.data
     },
     onSuccess: (data) => {
+      createOrderMutation.mutate(data.id)
       router.push(`/table-session/${data.id}`)
     },
   })
