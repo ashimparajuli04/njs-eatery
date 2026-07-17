@@ -8,7 +8,7 @@ export default function login() {
       {/* Background layer with gradient overlay */}
       <div className="absolute inset-0">
         {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-stone-50 to-orange-50" />
+        <div className="absolute inset-0 bg-linear-to-br from-amber-50 via-stone-50 to-orange-50" />
         
         {/* Food doodle pattern */}
         <div

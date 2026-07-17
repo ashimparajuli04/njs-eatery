@@ -8,9 +8,9 @@ import { LoadingView } from "@/components/loading";
 function ProtectedGate({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
 
-  if (loading)
-    return
-  <LoadingView label="NJ'S Restaurant and Cafe"/>;
+  if (loading) {
+    return <LoadingView label="NJ's Café & Restaurant" />;
+  }
   if (!user) return null; // redirect is already handled inside AuthProvider
 
   return <>{children}</>;

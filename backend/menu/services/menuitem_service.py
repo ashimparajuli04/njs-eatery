@@ -12,9 +12,7 @@ def create_menu_item(session, data: MenuItemCreate) -> MenuItem:
     if data.sub_category_id is not None:
             # 1️⃣ Validate subcategory exists
             subcategory = session.get(MenuSubCategory, data.sub_category_id)
-            if not subcategory:
-                raise HTTPException(status_code=400, detail="Invalid subcategory")
-    
+                     
             # 2️⃣ Ensure category ↔ subcategory match
             if subcategory.category_id != data.category_id:
                 raise HTTPException(
