@@ -234,3 +234,7 @@ sketch
 [Ss]cripts
 pyvenv.cfg
 pip-selfcheck.json
+
+# Re-include the Next.js frontend lib dir, ignored by the venv [Ll]ib rule above
+!frontend/app/lib/
+!frontend/app/lib/**
