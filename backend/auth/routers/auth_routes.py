@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
+from config import settings
 from database import get_session
 from auth.models.token import Token
 from auth.services.auth_service import authenticate_user, create_access_token
@@ -36,7 +37,7 @@ def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token_expires = timedelta(minutes=1440)
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
     access_token = create_access_token(
         data={"sub": user.email},

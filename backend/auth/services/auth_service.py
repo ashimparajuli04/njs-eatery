@@ -15,14 +15,11 @@ from auth.utils.auth_utils import verify_password
 
 from user.models.user import User, UserRole
 from user.services.user_service import get_user_by_email
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+from config import settings
 
 
-SECRET_KEY = os.getenv('JWT_SECRET_KEY')
-ALGORITHM = os.getenv('ALGORITHM')
+SECRET_KEY = settings.jwt_secret_key
+ALGORITHM = settings.algorithm
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 

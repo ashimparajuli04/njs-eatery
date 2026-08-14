@@ -1,12 +1,12 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from database import get_session
 
 from user.models.user import User
 from user.schemas.user import UserCreate, UserPublic
-from user.services.user_service import create_user, get_user_by_email, get_active_users, get_user_by_id
+from user.services.user_service import create_user, get_active_users, get_user_by_id
 from auth.services.auth_service import get_current_active_user
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 SessionDep = Annotated[Session, Depends(get_session)]
 
 @router.get(
-    "/",
+    "",
     response_model=list[UserPublic],
     dependencies=[Depends(get_current_active_user)]
 )
@@ -27,12 +27,6 @@ def read_users(session: SessionDep):
     status_code=201
 )
 def signup(user_in: UserCreate, session: SessionDep):
-    if get_user_by_email(session, user_in.email):
-        raise HTTPException(
-            status_code=400,
-            detail="Email already exists"
-        )
-
     return create_user(
         session,
         user_in
@@ -53,13 +47,7 @@ def read_me(
     dependencies=[Depends(get_current_active_user)]
 )
 def read_user(user_id: int, session: SessionDep):
-    user = get_user_by_id(session, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-    return user
+    return get_user_by_id(session, user_id)
     
 
 

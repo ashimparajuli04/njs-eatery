@@ -1,7 +1,12 @@
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel
 from datetime import datetime, timezone
+from decimal import Decimal
+from sqlalchemy import Index, Numeric
+from pydantic import field_serializer
 from typing import TYPE_CHECKING
 from enum import Enum
+
+from exceptions import ConflictError
 
 if TYPE_CHECKING:
     from service_flow.tablesession.models.table_session import TableSession
@@ -27,7 +32,10 @@ class Order(SQLModel, table=True):
         sa_column=Column(DateTime(timezone=True), nullable=True),
         default=None,
     )
-    final_total: float | None = None
+    final_total: Decimal | None = Field(
+        default=None,
+        sa_column=Column(Numeric(10, 2), nullable=True),
+    )
     
     # Relationships
     session: "TableSession" = Relationship(back_populates="orders")
@@ -37,8 +45,8 @@ class Order(SQLModel, table=True):
     )
     
     @property
-    def total_amount(self) -> float:
-        """Use stored value if served, calculate if pending"""
+    def total_amount(self) -> Decimal:
+        """Use stored value if served, if pending calculate"""
         if self.final_total is not None:
             return self.final_total
         return sum(item.line_total for item in self.items)
@@ -50,8 +58,18 @@ class Order(SQLModel, table=True):
             self.served_at = datetime.now(timezone.utc)
             self.final_total = sum(item.line_total for item in self.items)
         else:
+            if self.session and self.session.ended_at is not None:
+                raise ConflictError("Cannot un-serve an order in a closed session")
             self.status = OrderStatus.PENDING
             self.served_at = None
             self.final_total = None
+
+    @field_serializer("final_total")
+    def serialize_final_total(self, value: Decimal | None):
+        return None if value is None else float(value)
+
+    __table_args__ = (
+        Index("ix_order_status_created_at", "status", "created_at"),
+    )
         
     

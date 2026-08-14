@@ -28,18 +28,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Coffee, Users, Trash2, Shield } from "lucide-react"
+import { Coffee, Users, Trash2, Shield, UserRound } from "lucide-react"
 import { LoadingView } from "@/components/loading"
-
-type User = {
-  id: number
-  email: string
-  first_name: string
-  middle_name: string
-  last_name: string
-  role: "admin" | "employee"
-  is_active: boolean
-}
+import { toast } from "sonner"
+import type { User } from "@/types/table"
 
 export default function UsersManagementPage() {
   const { user: currentUser } = useAuth()
@@ -61,6 +53,12 @@ export default function UsersManagementPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
       setEditingRole(null)
+      toast.success("Role updated")
+    },
+    onError: () => {
+      toast.error("Couldn't update the role", {
+        description: "Please try again.",
+      })
     },
   })
 
@@ -70,6 +68,12 @@ export default function UsersManagementPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
+      toast.success("Account status updated")
+    },
+    onError: () => {
+      toast.error("Couldn't update the account status", {
+        description: "Please try again.",
+      })
     },
   })
 
@@ -79,6 +83,12 @@ export default function UsersManagementPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
+      toast.success("User deleted")
+    },
+    onError: () => {
+      toast.error("Couldn't delete the user", {
+        description: "Please try again.",
+      })
     },
   })
 
@@ -93,17 +103,6 @@ export default function UsersManagementPage() {
     return parts.join(" ")
   }
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case "admin":
-        return "bg-stone-800 text-white border-stone-800"
-      case "employee":
-        return "bg-stone-100 text-stone-700 border-stone-300"
-      default:
-        return "bg-stone-100 text-stone-700 border-stone-300"
-    }
-  }
-
   if (isLoading) {
     return (
       <LoadingView label="users"/>
@@ -114,33 +113,33 @@ export default function UsersManagementPage() {
   const totalUsers = users?.length || 0
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
       {/* Header Section */}
-      <div className="bg-white border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
           <div className="flex items-center gap-3 mb-2">
-            <Users className="h-6 w-6 text-stone-800" />
-            <div className="h-1 w-12 bg-stone-800" />
+            <Users className="h-6 w-6 text-stone-800 dark:text-stone-300" />
+            <div className="h-1 w-12 bg-stone-800 dark:bg-stone-300" />
           </div>
-          <h1 className="text-4xl font-bold text-stone-900 mb-1" style={{ fontFamily: 'Georgia, serif' }}>
+          <h1 className="text-4xl font-bold text-stone-900 dark:text-stone-100 mb-1" style={{ fontFamily: 'Georgia, serif' }}>
             User Management
           </h1>
-          <p className="text-stone-600 text-sm">
+          <p className="text-stone-600 dark:text-stone-400 text-sm">
             {activeUsers.length} active users · {totalUsers} total
           </p>
         </div>
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {users?.map((user) => (
             <Card
               key={user.id}
               className={`border-2 transition-all ${
                 user.id === currentUser?.id
-                  ? "border-amber-300 bg-amber-50/30"
-                  : "border-stone-200 hover:border-stone-300"
+                  ? "border-amber-300 bg-amber-50/30 dark:border-amber-700 dark:bg-amber-950/20"
+                  : "border-stone-200 dark:border-stone-700 hover:border-stone-300"
               }`}
             >
               <CardHeader className="pb-3">
@@ -156,7 +155,7 @@ export default function UsersManagementPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <CardTitle className="text-base font-semibold text-stone-900">
+                      <CardTitle className="text-base font-semibold text-stone-900 dark:text-stone-100">
                         {getFullName(user)}
                       </CardTitle>
                       {user.id === currentUser?.id && (
@@ -172,13 +171,13 @@ export default function UsersManagementPage() {
               <CardContent className="space-y-4">
                 {/* Email */}
                 <div>
-                  <p className="text-xs text-stone-500 uppercase tracking-wide mb-1">Email</p>
-                  <p className="text-sm text-stone-900 font-medium break-all">{user.email}</p>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-1">Email</p>
+                  <p className="text-sm text-stone-900 dark:text-stone-100 font-medium break-all">{user.email}</p>
                 </div>
 
                 {/* Role Selector */}
                 <div>
-                  <p className="text-xs text-stone-500 uppercase tracking-wide mb-2">Role</p>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide mb-2">Role</p>
                   <Select
                     value={editingRole?.userId === user.id ? editingRole.newRole : user.role}
                     onValueChange={(value) => setEditingRole({ userId: user.id, newRole: value })}
@@ -199,7 +198,18 @@ export default function UsersManagementPage() {
                           Admin
                         </div>
                       </SelectItem>
-                      <SelectItem value="employee">Employee</SelectItem>
+                      <SelectItem value="employee">
+                        <div className="flex items-center gap-2">
+                          <Coffee className="h-3 w-3" />
+                          Employee
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="user">
+                        <div className="flex items-center gap-2">
+                          <UserRound className="h-3 w-3" />
+                          User
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -207,10 +217,10 @@ export default function UsersManagementPage() {
                 {/* Active Toggle */}
                 <div className="flex items-center justify-between py-2">
                   <div>
-                    <Label htmlFor={`active-${user.id}`} className="text-xs text-stone-500 uppercase tracking-wide cursor-pointer">
+                    <Label htmlFor={`active-${user.id}`} className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide cursor-pointer">
                       Account Status
                     </Label>
-                    <p className="text-xs text-stone-600 mt-0.5">
+                    <p className="text-xs text-stone-600 dark:text-stone-400 mt-0.5">
                       {user.is_active ? "Active" : "Inactive"}
                     </p>
                   </div>

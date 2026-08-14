@@ -7,6 +7,11 @@ class DiningTableCreate(SQLModel):
     number: int
     type: TableType
 
+class DiningTableDetail(SQLModel):
+    id: int
+    number: int
+    type: TableType
+
 class DiningTableRead(SQLModel):
     id: int
     number: int

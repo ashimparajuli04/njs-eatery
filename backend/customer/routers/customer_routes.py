@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from auth.services.auth_service import get_current_active_user
-from customer.models.customer import Customer
 from customer.schemas.customer import CustomerCreate, CustomerRead
 from customer.services.customer_service import create_customer, get_customer_by_id, get_customer_by_number
 from database import get_session
@@ -13,7 +12,7 @@ from database import get_session
 SessionDep = Annotated[Session, Depends(get_session)]
 
 router = APIRouter(
-    prefix="/customer",
+    prefix="/customers",
     tags=["customer"],
 )
 
@@ -50,7 +49,7 @@ def read_customer_by_id(
     return customer
 
 @router.post(
-    "/",
+    "",
     response_model=CustomerRead,
     dependencies=[Depends(get_current_active_user)]
 )

@@ -1,13 +1,12 @@
 'use client'
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { 
+import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -27,26 +26,26 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Clock, User, UtensilsCrossed, Calendar, Receipt, Eye, Trash, Coffee } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Clock, User, UtensilsCrossed, Calendar, Receipt, Eye, Trash } from "lucide-react"
 import { useAuth } from "@/providers/auth-provider"
 import { LoadingView } from "@/components/loading"
-
-type TableSessionHistory = {
-  id: number
-  table_id: number | null
-  customer_name: string | null
-  final_bill: number
-  started_at: string
-  ended_at: string
-}
-
-type PaginationResponse = {
-  items: TableSessionHistory[]
-  total: number
-  page: number
-  page_size: number
-  total_pages: number
-}
+import { ErrorState } from "@/components/error-state"
+import { EmptyState } from "@/components/empty-state"
+import { useSessionHistory } from "@/lib/hooks"
+import { queryKeys } from "@/lib/query-keys"
+import {
+  formatCurrency,
+  formatDuration,
+  formatNepalDate,
+  formatNepalTime,
+} from "@/lib/format"
+import { toast } from "sonner"
 
 export default function HistoryPage() {
   const router = useRouter()
@@ -55,85 +54,62 @@ export default function HistoryPage() {
   const queryClient = useQueryClient()
   const { user } = useAuth()
 
-  const { data, isLoading } = useQuery<PaginationResponse>({
-    queryKey: ["table-session-history", currentPage, pageSize],
-    queryFn: async () => {
-      const response = await api.get(`/table-sessions/history/paginated?page=${currentPage}&page_size=${pageSize}`)
-      return response.data
+  const { data, isLoading, error, refetch } = useSessionHistory(currentPage, pageSize)
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.sessionHistory(currentPage, pageSize),
+    })
+
+  const deleteSessionMutation = useMutation({
+    mutationFn: (table_session_id: number) =>
+      api.delete(`/table-sessions/${table_session_id}`),
+    onSuccess: () => {
+      invalidate()
+      toast.success("Session deleted")
+    },
+    onError: () => {
+      toast.error("Couldn't delete the session", {
+        description: "Please try again.",
+      })
     },
   })
-  
-  
-  const invalidate = () => queryClient.invalidateQueries({ 
-    queryKey: ["table-session-history", currentPage, pageSize] 
-  })
-  
-  const deleteSessionMutation = useMutation({
-    mutationFn: (table_session_id: number) => api.delete(`/table-sessions/${table_session_id}`),
-    onSuccess: invalidate,
-  })
-  
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A'
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return 'Invalid Date'
-    
-    // Convert to Nepal time (UTC+5:45)
-    const nepalTime = new Date(date.getTime() + (5 * 60 + 45) * 60 * 1000)
-    
-    const day = String(nepalTime.getUTCDate()).padStart(2, '0')
-    const month = String(nepalTime.getUTCMonth() + 1).padStart(2, '0')
-    const year = nepalTime.getUTCFullYear()
-    return `${day}/${month}/${year}`
+
+  if (isLoading) {
+    return <LoadingView label="table session history" />
   }
 
-  const formatTime = (dateString: string) => {
-    if (!dateString) return 'N/A'
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return 'Invalid Time'
-    
-    // Convert to Nepal time (UTC+5:45)
-    const nepalTime = new Date(date.getTime() + (5 * 60 + 45) * 60 * 1000)
-    
-    let hours = nepalTime.getUTCHours()
-    const minutes = String(nepalTime.getUTCMinutes()).padStart(2, '0')
-    const ampm = hours >= 12 ? 'PM' : 'AM'
-    hours = hours % 12 || 12
-    return `${hours}:${minutes} ${ampm}`
+  if (error) {
+    return (
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center p-4">
+        <ErrorState
+          title="Couldn't load session history"
+          onRetry={refetch}
+        />
+      </div>
+    )
   }
 
-  const getDuration = (start: string, end: string) => {
-    const startDate = new Date(start)
-    const endDate = new Date(end)
-    const diffMs = endDate.getTime() - startDate.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    
-    if (diffMins < 60) return `${diffMins}m`
-    const hours = Math.floor(diffMins / 60)
-    const mins = diffMins % 60
-    return `${hours}h ${mins}m`
-  }
+  const totalPages = data?.total_pages || 1
 
   const renderPaginationItems = () => {
     if (!data) return null
-    
+
     const items = []
-    const totalPages = data.total_pages
     const current = currentPage
 
-    // Always show first page
     items.push(
       <PaginationItem key={1}>
-        <PaginationLink 
+        <PaginationLink
           onClick={() => setCurrentPage(1)}
           isActive={current === 1}
+          className="cursor-pointer"
         >
           1
         </PaginationLink>
       </PaginationItem>
     )
 
-    // Show ellipsis if needed
     if (current > 3) {
       items.push(
         <PaginationItem key="ellipsis-start">
@@ -142,13 +118,17 @@ export default function HistoryPage() {
       )
     }
 
-    // Show pages around current page
-    for (let i = Math.max(2, current - 1); i <= Math.min(totalPages - 1, current + 1); i++) {
+    for (
+      let i = Math.max(2, current - 1);
+      i <= Math.min(totalPages - 1, current + 1);
+      i++
+    ) {
       items.push(
         <PaginationItem key={i}>
-          <PaginationLink 
+          <PaginationLink
             onClick={() => setCurrentPage(i)}
             isActive={current === i}
+            className="cursor-pointer"
           >
             {i}
           </PaginationLink>
@@ -156,7 +136,6 @@ export default function HistoryPage() {
       )
     }
 
-    // Show ellipsis if needed
     if (current < totalPages - 2) {
       items.push(
         <PaginationItem key="ellipsis-end">
@@ -165,13 +144,13 @@ export default function HistoryPage() {
       )
     }
 
-    // Always show last page if more than 1 page
     if (totalPages > 1) {
       items.push(
         <PaginationItem key={totalPages}>
-          <PaginationLink 
+          <PaginationLink
             onClick={() => setCurrentPage(totalPages)}
             isActive={current === totalPages}
+            className="cursor-pointer"
           >
             {totalPages}
           </PaginationLink>
@@ -182,108 +161,124 @@ export default function HistoryPage() {
     return items
   }
 
-  if (isLoading) {
-    return (
-      <LoadingView label="table session history"/>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-stone-50">
-      {/* Header Section */}
-      <div className="bg-white border-b border-stone-200 rounded-2xl">
-        <div className="max-w-6xl mx-auto px-8 py-8">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
+      <div className="bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800 rounded-2xl">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8">
           <div className="flex items-center gap-3 mb-2">
-            <Receipt className="h-6 w-6 text-stone-800" />
-            <div className="h-1 w-12 bg-stone-800" />
+            <Receipt className="h-6 w-6 text-stone-800 dark:text-stone-300" />
+            <div className="h-1 w-12 bg-stone-800 dark:bg-stone-300" />
           </div>
-          <h1 className="text-4xl font-bold text-stone-900 mb-1" style={{ fontFamily: 'Georgia, serif' }}>
+          <h1
+            className="text-4xl font-bold text-stone-900 dark:text-stone-100 mb-1"
+            style={{ fontFamily: "Georgia, serif" }}
+          >
             Session History
           </h1>
-          <p className="text-stone-600 text-sm">
+          <p className="text-stone-600 dark:text-stone-400 text-sm">
             {data?.total || 0} completed sessions
           </p>
         </div>
       </div>
 
-      {/* Content Section */}
-      <div className="max-w-6xl mx-auto px-8 py-12">
-        {/* Session Cards */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
         {data && data.items.length > 0 ? (
           <div className="space-y-4 mb-12">
             {data.items.map((session) => (
-              <Card key={session.id} className="border-2 border-stone-200 hover:border-stone-300 transition-colors">
+              <Card
+                key={session.id}
+                className="border-2 border-stone-200 dark:border-stone-700 hover:border-stone-300 transition-colors"
+              >
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
                     <div className="space-y-1">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <UtensilsCrossed className="h-5 w-5 text-stone-600" />
-                        <span style={{ fontFamily: 'Georgia, serif' }}>Table Session #{session.id}</span>
+                      <CardTitle className="text-lg flex items-center gap-2 text-stone-900 dark:text-stone-100">
+                        <UtensilsCrossed className="h-5 w-5 text-stone-600 dark:text-stone-400" />
+                        <span style={{ fontFamily: "Georgia, serif" }}>
+                          Table Session #{session.id}
+                        </span>
                       </CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-stone-600">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-stone-600 dark:text-stone-400">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="h-3 w-3" />
-                          {formatDate(session.ended_at)}
+                          {formatNepalDate(session.ended_at)}
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Clock className="h-3 w-3" />
-                          {formatTime(session.started_at)}
+                          {formatNepalTime(session.started_at)}
                         </div>
-                        <span className="text-stone-400">—</span>
+                        <span className="text-stone-400 dark:text-stone-600">—</span>
                         <div className="flex items-center gap-1.5">
                           <Clock className="h-3 w-3" />
-                          {formatTime(session.ended_at)}
+                          {formatNepalTime(session.ended_at)}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold">
+                      <Badge
+                        variant="outline"
+                        className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800 font-semibold"
+                      >
                         Completed
                       </Badge>
                       <div className="text-right">
-                        <p className="text-xs text-stone-500 uppercase tracking-wide">Total Bill</p>
-                        <p className="text-2xl font-bold text-stone-900">₹{session.final_bill.toFixed(2)}</p>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                          Total Bill
+                        </p>
+                        <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+                          {formatCurrency(session.final_bill)}
+                        </p>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent>
-                  <div className="grid grid-cols-4 gap-4 p-4 bg-stone-50 rounded-lg border border-stone-200">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-stone-50 dark:bg-stone-900/60 rounded-lg border border-stone-200 dark:border-stone-800">
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-stone-500" />
+                      <User className="h-4 w-4 text-stone-500 dark:text-stone-400" />
                       <div>
-                        <p className="text-xs text-stone-500 uppercase tracking-wide">Customer</p>
-                        <p className="font-medium text-sm text-stone-900">{session.customer_name || "Unknown"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-stone-500" />
-                      <div>
-                        <p className="text-xs text-stone-500 uppercase tracking-wide">Duration</p>
-                        <p className="font-medium text-sm text-stone-900">
-                          {getDuration(session.started_at, session.ended_at)}
+                        <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                          Customer
+                        </p>
+                        <p className="font-medium text-sm text-stone-900 dark:text-stone-100">
+                          {session.customer_name || "Unknown"}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Receipt className="h-4 w-4 text-stone-500" />
+                      <Clock className="h-4 w-4 text-stone-500 dark:text-stone-400" />
                       <div>
-                        <p className="text-xs text-stone-500 uppercase tracking-wide">Session ID</p>
-                        <p className="font-medium text-sm text-stone-900">#{session.id}</p>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                          Duration
+                        </p>
+                        <p className="font-medium text-sm text-stone-900 dark:text-stone-100">
+                          {formatDuration(session.started_at, session.ended_at)}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex justify-end gap-2 col-start-4">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-4 w-4 text-stone-500 dark:text-stone-400" />
+                      <div>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                          Session ID
+                        </p>
+                        <p className="font-medium text-sm text-stone-900 dark:text-stone-100">
+                          #{session.id}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 col-span-2 lg:col-start-4 lg:col-span-1">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-stone-800 text-stone-800 hover:bg-stone-800 hover:text-white transition-all font-semibold"
+                        className="border-stone-800 dark:border-stone-200 text-stone-800 dark:text-stone-200 hover:bg-stone-800 hover:text-white dark:hover:bg-stone-100 dark:hover:text-stone-900 transition-all font-semibold"
                         onClick={() => router.push(`/table-session/${session.id}`)}
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
-                      
+
                       {user?.role !== "admin" ? (
                         <TooltipProvider>
                           <Tooltip>
@@ -308,35 +303,32 @@ export default function HistoryPage() {
                       ) : (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              className="font-semibold"
-                            >
+                            <Button variant="destructive" size="sm" className="font-semibold">
                               <Trash className="h-4 w-4 mr-2" />
                               Delete
                             </Button>
                           </AlertDialogTrigger>
-                      
-                          <AlertDialogContent className="border-stone-200">
+
+                          <AlertDialogContent className="border-stone-200 dark:border-stone-700">
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-stone-900">
+                              <AlertDialogTitle className="text-stone-900 dark:text-stone-100">
                                 Are you absolutely sure?
                               </AlertDialogTitle>
-                              <AlertDialogDescription className="text-stone-600">
-                                This action cannot be undone. This will permanently delete the table session from the database.
+                              <AlertDialogDescription className="text-stone-600 dark:text-stone-400">
+                                This action cannot be undone. This will permanently delete the
+                                table session from the database.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
-                      
+
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
+                              <AlertDialogAction
                                 className="bg-red-600 hover:bg-red-700"
                                 onClick={() => deleteSessionMutation.mutate(session.id)}
                                 disabled={deleteSessionMutation.isPending}
                               >
                                 {deleteSessionMutation.isPending &&
-                                 deleteSessionMutation.variables === session.id
+                                deleteSessionMutation.variables === session.id
                                   ? "Deleting..."
                                   : "Delete"}
                               </AlertDialogAction>
@@ -351,37 +343,38 @@ export default function HistoryPage() {
             ))}
           </div>
         ) : (
-          <Card className="border-2 border-stone-200">
-            <CardContent className="py-16 text-center">
-              <Receipt className="h-12 w-12 mx-auto text-stone-400 mb-4" />
-              <p className="text-lg font-semibold text-stone-900 mb-2" style={{ fontFamily: 'Georgia, serif' }}>
-                No session history
-              </p>
-              <p className="text-sm text-stone-600">
-                Completed sessions will appear here
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Receipt}
+            title="No session history"
+            description="Completed sessions will appear here."
+          />
         )}
 
-        {/* Pagination */}
         {data && data.total_pages > 1 && (
           <div className="flex justify-center">
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className={
+                      currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
+                    }
                   />
                 </PaginationItem>
-                
+
                 {renderPaginationItems()}
-                
+
                 <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => setCurrentPage(p => Math.min(data.total_pages, p + 1))}
-                    className={currentPage === data.total_pages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  <PaginationNext
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(data.total_pages, p + 1))
+                    }
+                    className={
+                      currentPage === data.total_pages
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
                   />
                 </PaginationItem>
               </PaginationContent>

@@ -6,7 +6,7 @@ from sqlmodel import Session, col, func, select
 from auth.services.auth_service import get_current_active_user
 from database import get_session
 
-from service_flow.order.schemas.order import OrderCreate
+from service_flow.order.schemas.order import OrderRead
 from service_flow.order.services.order_service import create_order
 from service_flow.tablesession.models.table_session import TableSession
 from service_flow.tablesession.schemas.table_session import TableSessionCreate, TableSessionPagination, TableSessionRead, TableSessionUpdate
@@ -32,7 +32,7 @@ def creating_table_session(table_in: TableSessionCreate, session: SessionDep):
     
 @router.post(
     "/{table_session_id}/orders",
-    response_model=OrderCreate,
+    response_model=OrderRead,
     status_code=201,
     dependencies=[Depends(get_current_active_user)]
 )
@@ -47,7 +47,14 @@ def creating_order(table_session_id: int, session: SessionDep):
     dependencies=[Depends(get_current_active_user)]
 )
 def close_table_session(session_id: int, session: SessionDep):
-    tablesession = session.get(TableSession, session_id)
+    statement = (
+        select(TableSession)
+        .where(TableSession.id == session_id)
+        .options(
+            selectinload(TableSession.orders).selectinload(Order.items)
+        )
+    )
+    tablesession = session.exec(statement).first()
 
     if not tablesession:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -161,9 +168,6 @@ def delete_table_session(
     session: SessionDep,
 ):
     table_session = get_table_session_by_id(session, table_session_id)
-
-    if not table_session:
-        raise HTTPException(status_code=404, detail="table session not found")
 
     delete_table_session_hard(session, table_session)
     

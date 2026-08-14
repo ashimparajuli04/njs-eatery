@@ -1,4 +1,9 @@
 import { LoginCard } from "@/components/login-card";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Login",
+};
 
 
 export default function login() {
@@ -8,7 +13,7 @@ export default function login() {
       {/* Background layer with gradient overlay */}
       <div className="absolute inset-0">
         {/* Gradient background */}
-        <div className="absolute inset-0 bg-linear-to-br from-amber-50 via-stone-50 to-orange-50" />
+        <div className="absolute inset-0 bg-linear-to-br from-amber-50 via-stone-50 to-orange-50 dark:from-stone-950 dark:via-stone-950 dark:to-stone-900" />
         
         {/* Food doodle pattern */}
         <div

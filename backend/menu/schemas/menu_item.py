@@ -1,9 +1,10 @@
 # schemas/menu_item.py
+from decimal import Decimal
 from sqlmodel import SQLModel
 
 class MenuItemCreate(SQLModel):
     name: str
-    price: float
+    price: Decimal
     category_id: int
     sub_category_id: int | None = None
     description: str | None = None
@@ -13,7 +14,7 @@ class MenuItemCreate(SQLModel):
 
 class MenuItemUpdate(SQLModel):
     name: str | None = None
-    price: float | None = None
+    price: Decimal | None = None
     category_id: int | None = None
     sub_category_id: int | None = None
     description: str | None = None

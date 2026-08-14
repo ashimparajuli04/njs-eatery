@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from database import get_session
@@ -9,7 +9,7 @@ from menu.services.menuitem_service import create_menu_item, get_menuitem_by_id,
 from auth.services.auth_service import require_admin
 
 router = APIRouter(
-    prefix="/admin/menu-items",
+    prefix="/admin/menu/items",
     tags=["menuitems"],
 )
 
@@ -17,7 +17,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 
 @router.post(
-    "/",
+    "",
     response_model=MenuItem,
     dependencies=[Depends(require_admin)]
 )
@@ -48,8 +48,5 @@ def delete_item(
     session: SessionDep,
 ):
     item = get_menuitem_by_id(session, item_id)
-
-    if not item:
-        raise HTTPException(status_code=404, detail="item not found")
 
     delete_menu_item_hard(session, item)

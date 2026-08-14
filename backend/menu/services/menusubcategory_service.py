@@ -1,5 +1,6 @@
 from sqlmodel import select, func, Session
-from fastapi import HTTPException
+
+from crud import delete, get_by_id, update
 from menu.models.menu_subcategory import MenuSubCategory
 from menu.schemas.menu_subcategory import MenuSubCategoryCreate, MenuSubCategoryUpdate
 
@@ -24,27 +25,15 @@ def create_subcategory(session, data: MenuSubCategoryCreate) -> MenuSubCategory:
     return subcategory
 
 def get_subcategory_by_id(session: Session, subcategory_id: int) -> MenuSubCategory:
-    subcategory = session.get(MenuSubCategory, subcategory_id)
-    if not subcategory:
-        raise HTTPException(status_code=404, detail="Sub Category not found")
-    return subcategory
-    
+    return get_by_id(session, MenuSubCategory, subcategory_id, "Sub Category not found")
+
 def update_subcategory(
     *,
     session: Session,
     subcategory: MenuSubCategory,
     data: MenuSubCategoryUpdate
 ) -> MenuSubCategory:
-    data_dict = data.model_dump(exclude_unset=True)
+    return update(session, subcategory, data)
 
-    for key, value in data_dict.items():
-        setattr(subcategory, key, value)
-
-    session.add(subcategory)
-    session.commit()
-    session.refresh(subcategory)
-    return subcategory
-    
 def delete_menu_subcategory_hard(session: Session, subcategory: MenuSubCategory):
-    session.delete(subcategory)
-    session.commit()
+    return delete(session, subcategory)

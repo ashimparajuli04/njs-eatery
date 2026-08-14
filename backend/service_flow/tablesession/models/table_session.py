@@ -1,6 +1,8 @@
 from sqlmodel import Field, SQLModel, Relationship
 from datetime import datetime, timezone
-from sqlalchemy import Column, DateTime
+from decimal import Decimal
+from sqlalchemy import Column, DateTime, Numeric
+from pydantic import field_serializer
 from typing import TYPE_CHECKING, Optional, List
 
 if TYPE_CHECKING:
@@ -32,7 +34,10 @@ class TableSession(SQLModel, table=True):
         default=None,
     )
 
-    final_bill: float | None = None
+    final_bill: Decimal | None = Field(
+        default=None,
+        sa_column=Column(Numeric(10, 2), nullable=True),
+    )
 
     table: Optional["DiningTable"] = Relationship(
         back_populates="sessions"
@@ -48,7 +53,7 @@ class TableSession(SQLModel, table=True):
     )
 
     @property
-    def total_bill(self) -> float:
+    def total_bill(self) -> Decimal:
         if self.final_bill is not None:
             return self.final_bill
         return sum(order.total_amount for order in self.orders)
@@ -65,3 +70,7 @@ class TableSession(SQLModel, table=True):
         if self.customer:
             self.customer.visit_count += 1
             self.customer.total_spent += self.final_bill
+
+    @field_serializer("final_bill")
+    def serialize_final_bill(self, value: Decimal | None):
+        return None if value is None else float(value)

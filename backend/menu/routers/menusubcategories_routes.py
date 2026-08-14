@@ -7,7 +7,7 @@ from database import get_session
 from menu.models.menu_subcategory import MenuSubCategory
 
 router = APIRouter(
-    prefix="/menu-subcategories",
+    prefix="/menu/subcategories",
     tags=["menu-subcategories"],
 )
 
@@ -22,7 +22,7 @@ def read_menu_subcategories(session: SessionDep):
     return session.exec(
         select(MenuSubCategory)
         .order_by(
-            MenuSubCategory.category_id,       # type: ignore lolol
-            MenuSubCategory.display_order,     # type: ignore 
-        )  # pyright: ignore
+            MenuSubCategory.category_id,
+            MenuSubCategory.display_order,
+        )
     ).all()

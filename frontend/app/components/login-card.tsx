@@ -117,7 +117,7 @@ export function LoginCard() {
   })
 
   return (
-    <Card className="w-full max-w-5xl flex flex-col md:flex-row px-4 md:px-8 relative overflow-hidden bg-nj-cream shadow-2xl border-2 border-stone-200/50">
+    <Card className="w-full max-w-5xl flex flex-col md:flex-row px-4 md:px-8 relative overflow-hidden bg-nj-cream dark:bg-stone-900 shadow-2xl border-2 border-stone-200/50 dark:border-stone-700/50">
 
       {/* LEFT IMAGE with gradient overlay - Desktop always visible */}
       <div className="hidden md:flex flex-1 relative items-center justify-center overflow-hidden">
@@ -174,7 +174,7 @@ export function LoginCard() {
             <div className="h-1 w-12 bg-gradient-to-r from-amber-600 to-amber-400 rounded-full" />
           </div>
           
-          <CardTitle className="text-2xl font-bold text-stone-900">
+          <CardTitle className="text-2xl font-bold text-stone-900 dark:text-stone-100">
             {authMode === "login"
               ? "Welcome back"
               : signupStep === 1
@@ -182,7 +182,7 @@ export function LoginCard() {
               : "Almost there"}
           </CardTitle>
 
-          <CardDescription className="text-base text-stone-600">
+          <CardDescription className="text-base text-stone-600 dark:text-stone-400">
             {authMode === "login"
               ? "Enter your credentials to continue"
               : signupStep === 1
@@ -215,7 +215,7 @@ export function LoginCard() {
             {authMode === "login" && (
               <div className="space-y-4 animate-in fade-in duration-500">
                 <div className="grid gap-2">
-                  <Label className="text-stone-700 font-medium">Email</Label>
+                  <Label className="text-stone-700 dark:text-stone-300 font-medium">Email</Label>
                   <Input
                     type="email"
                     placeholder="your@email.com"
@@ -231,7 +231,7 @@ export function LoginCard() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label className="text-stone-700 font-medium">Password</Label>
+                  <Label className="text-stone-700 dark:text-stone-300 font-medium">Password</Label>
                   <div className="relative">
                     <Input
                       type={showLoginPassword ? "text" : "password"}
@@ -267,7 +267,7 @@ export function LoginCard() {
             {authMode === "signup" && signupStep === 1 && (
               <div className="space-y-4 animate-in fade-in duration-500">
                 <div className="grid gap-2">
-                  <Label className="text-stone-700 font-medium">
+                  <Label className="text-stone-700 dark:text-stone-300 font-medium">
                     First Name <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -279,7 +279,7 @@ export function LoginCard() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label className="text-stone-700 font-medium">
+                  <Label className="text-stone-700 dark:text-stone-300 font-medium">
                     Middle Name <span className="text-stone-400 text-xs">(optional)</span>
                   </Label>
                   <Input
@@ -291,7 +291,7 @@ export function LoginCard() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label className="text-stone-700 font-medium">
+                  <Label className="text-stone-700 dark:text-stone-300 font-medium">
                     Last Name <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -308,7 +308,7 @@ export function LoginCard() {
             {authMode === "signup" && signupStep === 2 && (
               <div className="space-y-4 animate-in fade-in duration-500">
                 <div className="grid gap-2">
-                  <Label className="text-stone-700 font-medium">
+                  <Label className="text-stone-700 dark:text-stone-300 font-medium">
                     Email <span className="text-red-500">*</span>
                   </Label>
                   <Input
@@ -321,7 +321,7 @@ export function LoginCard() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label className="text-stone-700 font-medium">
+                  <Label className="text-stone-700 dark:text-stone-300 font-medium">
                     Password <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
@@ -346,7 +346,7 @@ export function LoginCard() {
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-stone-500 mt-1">
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
                     Must be at least 8 characters
                   </p>
                 </div>

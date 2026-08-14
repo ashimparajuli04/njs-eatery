@@ -1,60 +1,80 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import api from "@/lib/api";
+import type { User } from "@/types/table";
 
-type Role = "admin" | "employee" | "manager";
-
-type User = {
-  id: number;
-  email: string;
-  first_name: string;
-  middle_name?: string;
-  last_name: string;
-  role: Role;
-};
+type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "error";
 
 type AuthContextType = {
   user: User | null;
   loading: boolean;
+  status: AuthStatus;
+  retry: () => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  status: "loading",
+  retry: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<AuthStatus>(() => {
+    if (typeof window === "undefined") return "loading";
+    return localStorage.getItem("access_token") ? "loading" : "unauthenticated";
+  });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
+    if (!token) return;
 
-    if (!token) {
-      setLoading(false);
-      router.replace("/login");
-      return;
-    }
-
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data) {
-          localStorage.removeItem("access_token");
-          router.replace("/login");
-          return;
-        }
-        setUser(data);
+    let cancelled = false;
+    api
+      .get<User>("/users/me")
+      .then((res) => {
+        if (cancelled) return;
+        setUser(res.data);
+        setStatus("authenticated");
       })
-      .finally(() => setLoading(false));
-  }, [router]);
+      .catch((error) => {
+        if (cancelled) return;
+        if (error.response?.status === 401) {
+          localStorage.removeItem("access_token");
+          setUser(null);
+          setStatus("unauthenticated");
+        } else {
+          // Network failure or 5xx: don't redirect — the protected gate shows a retry screen.
+          setStatus("error");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [attempt]);
+
+  useEffect(() => {
+    if (
+      status === "unauthenticated" &&
+      window.location.pathname !== "/login"
+    ) {
+      router.replace("/login");
+    }
+  }, [status, router]);
+
+  const retry = useCallback(() => {
+    setStatus("loading");
+    setAttempt((a) => a + 1);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading: status === "loading", status, retry }}>
       {children}
     </AuthContext.Provider>
   );

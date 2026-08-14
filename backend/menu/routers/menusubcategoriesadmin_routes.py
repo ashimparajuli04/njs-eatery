@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from database import get_session
@@ -9,7 +9,7 @@ from menu.services.menusubcategory_service import create_subcategory, update_sub
 from auth.services.auth_service import require_admin
 
 router = APIRouter(
-    prefix="/admin/menu-subcategories",
+    prefix="/admin/menu/subcategories",
     tags=["menu-subcategories"],
 )
 
@@ -17,7 +17,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 
 @router.post(
-    "/",
+    "",
     response_model=MenuSubCategory,
     dependencies=[Depends(require_admin)]
 )
@@ -51,8 +51,5 @@ def delete_subcategory(
     session: SessionDep,
 ):
     subcategory = get_subcategory_by_id(session, subcategory_id)
-
-    if not subcategory:
-        raise HTTPException(status_code=404, detail="subcategory not found")
 
     delete_menu_subcategory_hard(session, subcategory)

@@ -9,7 +9,7 @@ from auth.services.auth_service import get_current_active_user
 SessionDep = Annotated[Session, Depends(get_session)]
 
 router = APIRouter(
-    prefix="/menu-categories",
+    prefix="/menu/categories",
     tags=["menu-categories"],
 )
 

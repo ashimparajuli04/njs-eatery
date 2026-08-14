@@ -1,6 +1,6 @@
-from typing import Annotated, OrderedDict
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import Case
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select, func
@@ -8,15 +8,15 @@ from sqlmodel import Session, select, func
 from auth.services.auth_service import get_current_active_user
 from database import get_session
 from service_flow.order.models.order import Order, OrderStatus
-from service_flow.order.schemas.order import OrderRead, OrderUpdate
+from service_flow.order.schemas.order import OrderRead
 from service_flow.order.services.order_service import delete_order_hard, get_order_by_id
 from service_flow.orderitem.schemas.order_item import OrderItemCreate
-from service_flow.orderitem.services.orderitem_services import create_order_item
+from service_flow.orderitem.services.orderitem_services import create_order_item, create_order_items_bulk
 
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
-router = APIRouter(prefix="/order", tags=["order"])
+router = APIRouter(prefix="/orders", tags=["orders"])
 
 @router.post(
     "/{order_id}/items",
@@ -44,10 +44,11 @@ def create_order_items_bulk_route(
     order_items_in: list[OrderItemCreate],
     session: SessionDep,
 ):
-    return [
-        create_order_item(session, item, order_id)
-        for item in order_items_in
-    ]
+    return create_order_items_bulk(
+        session,
+        order_id,
+        order_items_in,
+    )
     
 @router.delete(
     "/{id}",
@@ -59,9 +60,6 @@ def delete_order(
     session: SessionDep,
 ):
     order = get_order_by_id(session, id)
-
-    if not order:
-        raise HTTPException(status_code=404, detail="order not found")
 
     delete_order_hard(session, order)
     
@@ -75,9 +73,6 @@ def patch_order(
     session: SessionDep,
 ):
     order = get_order_by_id(session, order_id)
-
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
 
     order.toggle_served()
     session.add(order)

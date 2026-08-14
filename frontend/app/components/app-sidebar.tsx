@@ -1,6 +1,8 @@
-import { ClipboardList, History, LayoutDashboard, LogOut, PanelLeft, Settings, Utensils, X, Coffee, UsersRound } from "lucide-react"
+import { BarChart3, ClipboardList, History, LayoutDashboard, LogOut, Moon, PanelLeft, Sun, Utensils, X, UsersRound } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 import { useAuth } from "@/providers/auth-provider"
 import {
   Sidebar,
@@ -8,7 +10,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -31,6 +32,11 @@ const items = [
     title: "Dashboard",
     url: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Analytics",
+    url: "/analytics",
+    icon: BarChart3,
   },
   {
     title: "Menu",
@@ -57,7 +63,17 @@ const items = [
 export function AppSidebar() {
   const { open, setOpen, setOpenMobile } = useSidebar()
   const { user } = useAuth()
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  // Track mount so the theme toggle doesn't flash the wrong icon during hydration.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true)
+  }, [])
+
+  const isDark = mounted && resolvedTheme === "dark"
 
   const handleLogout = () => {
     localStorage.removeItem('access_token')
@@ -136,6 +152,25 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              tooltip={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              <button
+                className="flex items-center gap-2 w-full"
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDark ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+                <span>{isDark ? "Light mode" : "Dark mode"}</span>
+              </button>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

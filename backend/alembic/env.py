@@ -1,43 +1,32 @@
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
-from alembic import context
 import sys
+from logging.config import fileConfig
 from pathlib import Path
-from dotenv import load_dotenv
-import os
-# Import your SQLModel models
+
+from alembic import context
+from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
+
+from config import settings
+
 from menu.models.menu_category import MenuCategory
 from menu.models.menu_subcategory import MenuSubCategory
 from menu.models.menu_item import MenuItem
 from user.models.user import User
-
 from service_flow.diningtable.models.dining_table import DiningTable
 from service_flow.tablesession.models.table_session import TableSession
 from service_flow.order.models.order import Order
 from service_flow.orderitem.models.order_item import OrderItem
 from customer.models.customer import Customer
-# Load environment variables
-load_dotenv()
 
-# Add the parent directory to the path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-
-
-
-
-# this is the Alembic Config object
 config = context.config
 
-# Interpret the config file for Python logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set the sqlalchemy.url from environment variable
-config.set_main_option('sqlalchemy.url', os.getenv('DATABASE_URL')) #type = ignore
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
-# Set target metadata for autogenerate support
 target_metadata = SQLModel.metadata
 
 

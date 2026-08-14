@@ -9,7 +9,7 @@ from menu.routers import (
 from user.routers import user_routes, useradmin_routes
 from auth.routers import auth_routes
 from service_flow.diningtable.routers import diningtable_routes, diningtableadmin_routes
-from service_flow.tablesession.routers import tablesession_routes, tablesessionadmin_routes
+from service_flow.tablesession.routers import tablesession_routes
 from service_flow.order.routers import order_routes
 from service_flow.orderitem.routers import orderitem_routes
 from statistics.routers import stat_routes
@@ -28,7 +28,6 @@ routers = [
     diningtable_routes,
     diningtableadmin_routes,
     tablesession_routes,
-    tablesessionadmin_routes,
     order_routes,
     orderitem_routes,
     stat_routes,

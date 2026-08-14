@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from database import get_session
@@ -9,13 +9,13 @@ from menu.services.menucategory_service import create_category, get_category_by_
 from auth.services.auth_service import require_admin
 
 router = APIRouter(
-    prefix="/admin/menu-categories",
+    prefix="/admin/menu/categories",
     tags=["menu-categories"],
 )
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
-@router.post("/",
+@router.post("",
     response_model=MenuCategory,
     dependencies=[Depends(require_admin)]
 )
@@ -49,8 +49,5 @@ def delete_category(
     session: SessionDep,
 ):
     category = get_category_by_id(session, category_id)
-
-    if not category:
-        raise HTTPException(status_code=404, detail="category not found")
 
     delete_menu_category_hard(session, category)

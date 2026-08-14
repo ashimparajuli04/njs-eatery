@@ -7,7 +7,7 @@ from database import get_session
 from menu.models.menu_item import MenuItem
 
 router = APIRouter(
-    prefix="/menu-items",
+    prefix="/menu/items",
     tags=["menuitems"],
 )
 

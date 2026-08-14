@@ -1,17 +1,13 @@
-from dotenv import load_dotenv
-import os
-from sqlmodel import create_engine, SQLModel, Session
-import base
+from sqlmodel import Session, SQLModel, create_engine
 
-load_dotenv()
+from config import settings
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+engine = create_engine(settings.database_url, echo=False)
 
-# PostgreSQL engine (no connect_args needed)
-engine = create_engine(DATABASE_URL, echo=False)
 
 def init_db():
     SQLModel.metadata.create_all(engine)
+
 
 def get_session():
     with Session(engine) as session:

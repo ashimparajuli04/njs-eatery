@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from database import get_session
@@ -32,9 +32,6 @@ def patch_user(
 ):
     user = get_user_by_id(session, user_id)
 
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
     return update_user(session=session, user=user, data=data)
     
 @router.delete(
@@ -47,9 +44,6 @@ def delete_user(
     session: SessionDep,
 ):
     user = get_user_by_id(session, user_id)
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
 
     delete_user_hard(session, user)
 

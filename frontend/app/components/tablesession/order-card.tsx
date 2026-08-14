@@ -1,64 +1,21 @@
 import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import api from "@/lib/api"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Clock, Plus, Trash2, CheckCircle, ChefHat, ExternalLink } from "lucide-react"
 import { ItemModal } from "./item-modal"
+import { useMenu } from "@/lib/hooks"
+import { getMenuItemName } from "@/lib/hooks"
+import { formatCurrency, formatNepalTime } from "@/lib/format"
+import type { Order } from "@/types/table"
+import { toast } from "sonner"
 
-type Order = {
-  id: number
-  items: OrderItem[]
-  total_amount: number
-  created_at: string
-  status: string
-  served_at: string | null
-}
-
-type OrderItem = {
-  id: number
-  menu_item_id: number
-  quantity: number
-  price_at_time: number
-  note: string
-  line_total: number
-}
-
-type MenuItem = {
-  id: number
-  name: string
-  price: number
-  category_id: number
-  sub_category_id: number | null
-  display_order: number
-  is_available: boolean
-}
-
-type MenuCategory = {
-  id: number
-  name: string
-  display_order: number
-}
-
-type MenuSubCategory = {
-  id: number
-  name: string
-  category_id: number
-  display_order: number
-}
-
-type AddItemParams = {
-  orderId: number
-  menuItemId: number
-  quantity: number
-  note: string
-}
-
-export function OrderCard({ 
+export function OrderCard({
   order,
-  sessionId
-}: { 
+  sessionId,
+}: {
   order: Order
   sessionId?: number
 }) {
@@ -66,118 +23,120 @@ export function OrderCard({
   const queryClient = useQueryClient()
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["tableSession"] })
+  const { items: menuItems } = useMenu()
 
-  // Fetch menu data
-  const { data: menuItems } = useQuery<MenuItem[]>({
-    queryKey: ["menu-items"],
-    queryFn: async () => (await api.get("/menu-items")).data,
-  })
+  const invalidate = (orderId: number) => {
+    queryClient.invalidateQueries({
+      queryKey: sessionId
+        ? ["tableSession", String(sessionId)]
+        : ["tableSession"],
+    })
+    queryClient.invalidateQueries({
+      queryKey: ["orders", orderId],
+    })
+    queryClient.invalidateQueries({
+      queryKey: ["orders"],
+    })
+  }
 
-  const { data: categories } = useQuery<MenuCategory[]>({
-    queryKey: ["menu-categories"],
-    queryFn: async () => (await api.get("/menu-categories")).data,
-  })
-  
-  const { data: subCategories } = useQuery<MenuSubCategory[]>({
-    queryKey: ["menu-subcategories"],
-    queryFn: async () => (await api.get("/menu-subcategories")).data,
-  })
-
-  // Add item mutation
-  const addItemMutation = useMutation({
-    mutationFn: ({ orderId, menuItemId, quantity, note }: AddItemParams) => 
-      api.post(`/order/${orderId}/items`, { menu_item_id: menuItemId, quantity, note }),
-    onSuccess: invalidate,
-  })
-  
-  
   const addItemsMutation = useMutation({
-    mutationFn: ({ orderId, items }: { orderId: number; items: { menu_item_id: number; quantity: number; note: string }[] }) =>
-      api.post(`/order/${orderId}/items/bulk`, items),
-    onSuccess: invalidate,
+    mutationFn: ({
+      orderId,
+      items,
+    }: {
+      orderId: number
+      items: { menu_item_id: number; quantity: number; note: string }[]
+    }) => api.post(`/orders/${orderId}/items/bulk`, items),
+    onSuccess: (_data, variables) => invalidate(variables.orderId),
+    onError: () => {
+      toast.error("Couldn't add items", {
+        description: "Please try again.",
+      })
+    },
   })
 
-  // Delete order mutation
   const deleteOrderMutation = useMutation({
-    mutationFn: () => api.delete(`/order/${order.id}`),
-    onSuccess: invalidate,
-  })
-  
-  const deleteOrderItemMutation = useMutation({
-    mutationFn: (itemId: number) => api.delete(`/orderitem/${itemId}`),
-    onSuccess: invalidate,
+    mutationFn: () => api.delete(`/orders/${order.id}`),
+    onSuccess: () => invalidate(order.id),
+    onError: () => {
+      toast.error("Couldn't delete the order", {
+        description: "Please try again.",
+      })
+    },
   })
 
-  // Toggle order status mutation
+  const deleteOrderItemMutation = useMutation({
+    mutationFn: (itemId: number) => api.delete(`/order-items/${itemId}`),
+    onSuccess: () => invalidate(order.id),
+    onError: () => {
+      toast.error("Couldn't remove the item", {
+        description: "Please try again.",
+      })
+    },
+  })
+
   const toggleOrderStatusMutation = useMutation({
-    mutationFn: () => api.patch(`/order/${order.id}/toggle-status`),
-    onSuccess: invalidate,
+    mutationFn: () => api.patch(`/orders/${order.id}/toggle-status`),
+    onSuccess: () => invalidate(order.id),
+    onError: () => {
+      toast.error("Couldn't update the order", {
+        description: "Please try again.",
+      })
+    },
   })
 
   const isPending = order.status === "pending"
   const isServed = order.status === "served"
 
-  const getMenuItemName = (id: number): string => {
-    return menuItems?.find((m) => m.id === id)?.name || `Item #${id}`
-  }
-
   const handleAddItems = (items: Record<number, number>) => {
     const itemsToAdd = Object.entries(items)
-      .filter(([_, qty]) => qty > 0)
+      .filter(([, qty]) => qty > 0)
       .map(([menuId, qty]) => ({
         menu_item_id: Number(menuId),
         quantity: qty,
-        note: ""
+        note: "",
       }))
-  
+
     addItemsMutation.mutate(
       { orderId: order.id, items: itemsToAdd },
       { onSuccess: () => setIsAddModalOpen(false) }
     )
   }
 
-  const formatServedTime = (dateString: string | null) => {
-    if (!dateString) return null
-    const date = new Date(dateString)
-    const nepalTime = new Date(date.getTime() + (5 * 60 + 45) * 60 * 1000)
-    let hours = nepalTime.getUTCHours()
-    const minutes = String(nepalTime.getUTCMinutes()).padStart(2, '0')
-    const ampm = hours >= 12 ? 'PM' : 'AM'
-    hours = hours % 12 || 12
-    return `${hours}:${minutes} ${ampm}`
-  }
-
   return (
     <>
-      <Card className={`flex flex-col ${isServed ? "border-green-200 bg-green-50/30" : ""}`}>
-            <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+      <Card
+        className={`flex flex-col border-2 border-stone-200 dark:border-stone-700 ${
+          isServed ? "border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-950/20" : ""
+        }`}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="space-y-1">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-lg flex items-center gap-2 text-stone-900 dark:text-stone-100">
                 Order #{order.id}
                 {isPending && <ChefHat className="h-4 w-4 text-orange-500" />}
                 {isServed && <CheckCircle className="h-4 w-4 text-green-600" />}
                 {sessionId && (
                   <Button
                     size="sm"
-                    variant="outline"  // Changed from "ghost"
+                    variant="outline"
                     onClick={() => router.push(`/table-session/${sessionId}`)}
-                    className="h-7 px-3 text-xs ml-2"  // Made slightly bigger
+                    className="h-7 px-3 text-xs ml-2"
                   >
                     <ExternalLink className="h-3 w-3 mr-1" />
-                    Table #{sessionId}
+                    Session #{sessionId}
                   </Button>
                 )}
               </CardTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
                 <Clock className="h-3 w-3" />
-                {new Date(order.created_at).toLocaleString()}
+                {formatNepalTime(order.created_at)}
               </div>
               {isServed && order.served_at && (
-                <div className="flex items-center gap-2 text-xs text-green-700">
+                <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400">
                   <CheckCircle className="h-3 w-3" />
-                  Served at {formatServedTime(order.served_at)}
+                  Served at {formatNepalTime(order.served_at)}
                 </div>
               )}
             </div>
@@ -187,9 +146,10 @@ export function OrderCard({
                 variant={isPending ? "outline" : "default"}
                 onClick={() => toggleOrderStatusMutation.mutate()}
                 disabled={toggleOrderStatusMutation.isPending}
-                className={isPending 
-                  ? "border-orange-300 text-orange-700 hover:bg-orange-50" 
-                  : "bg-green-600 hover:bg-green-700 text-white"
+                className={
+                  isPending
+                    ? "border-orange-300 text-orange-700 hover:bg-orange-50"
+                    : "bg-green-600 hover:bg-green-700 text-white"
                 }
               >
                 {isPending ? (
@@ -205,8 +165,10 @@ export function OrderCard({
                 )}
               </Button>
               <div className="text-right">
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-xl font-bold">₹{order.total_amount}</p>
+                <p className="text-sm text-stone-500 dark:text-stone-400">Total</p>
+                <p className="text-xl font-bold text-stone-900 dark:text-stone-100">
+                  {formatCurrency(order.total_amount)}
+                </p>
               </div>
             </div>
           </div>
@@ -216,10 +178,19 @@ export function OrderCard({
           {order.items && order.items.length > 0 ? (
             <div className="space-y-2">
               {order.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-3 bg-white dark:bg-stone-900 rounded-lg border border-stone-200 dark:border-stone-700"
+                >
                   <div className="flex-1">
-                    <p className="font-medium">{getMenuItemName(item.menu_item_id)}</p>
-                    {item.note && <p className="text-sm text-muted-foreground italic">Note: {item.note}</p>}
+                    <p className="font-medium text-stone-900 dark:text-stone-100">
+                      {getMenuItemName(item.menu_item_id, menuItems)}
+                    </p>
+                    {item.note && (
+                      <p className="text-sm text-stone-500 dark:text-stone-400 italic">
+                        Note: {item.note}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-6">
                     <Button
@@ -231,48 +202,58 @@ export function OrderCard({
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
-                    <span className="text-sm"><span className="text-muted-foreground">Qty:</span> {item.quantity}</span>
-                    <span className="text-sm"><span className="text-muted-foreground">@</span> ₹{item.price_at_time}</span>
-                    <p className="font-bold min-w-20 text-right">₹{item.line_total}</p>
+                    <span className="text-sm text-stone-700 dark:text-stone-300">
+                      <span className="text-stone-500 dark:text-stone-400">Qty:</span>{" "}
+                      {item.quantity}
+                    </span>
+                    <span className="text-sm text-stone-700 dark:text-stone-300">
+                      <span className="text-stone-500 dark:text-stone-400">@</span>{" "}
+                      {formatCurrency(item.price_at_time)}
+                    </span>
+                    <p className="font-bold min-w-20 text-right text-stone-900 dark:text-stone-100">
+                      {formatCurrency(item.line_total)}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-4">No items in this order</p>
+            <p className="text-center text-stone-500 dark:text-stone-400 py-4">
+              No items in this order
+            </p>
           )}
         </CardContent>
 
         <CardFooter className="border-t pt-4 flex justify-between">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setIsAddModalOpen(true)}
             disabled={isServed}
           >
-            <Plus className="h-4 w-4 mr-2" />Add Item
+            <Plus className="h-4 w-4 mr-2" />
+            Add Item
           </Button>
-          <Button 
-            variant="destructive" 
-            size="sm" 
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={() => deleteOrderMutation.mutate()}
             disabled={deleteOrderMutation.isPending}
           >
-            <Trash2 className="h-4 w-4 mr-2" />Delete
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
           </Button>
         </CardFooter>
       </Card>
 
-      <ItemModal 
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        orderId={order.id}
-        menuItems={menuItems || []}
-        categories={categories || []}
-        subCategories={subCategories || []}
-        onAdd={handleAddItems}
-        isLoading={addItemsMutation.isPending}
-      />
+      {isAddModalOpen && (
+        <ItemModal
+          onClose={() => setIsAddModalOpen(false)}
+          orderId={order.id}
+          onAdd={handleAddItems}
+          isLoading={addItemsMutation.isPending}
+        />
+      )}
     </>
   )
 }

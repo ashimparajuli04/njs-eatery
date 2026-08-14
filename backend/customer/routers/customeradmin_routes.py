@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from auth.services.auth_service import get_current_active_user
@@ -12,7 +12,7 @@ from database import get_session
 SessionDep = Annotated[Session, Depends(get_session)]
 
 router = APIRouter(
-    prefix="/admin/customer",
+    prefix="/admin/customers",
     tags=["customer"],
 )
 
@@ -26,8 +26,5 @@ def read_customer_info_by_id(
     session: SessionDep
 ):
     customer = get_customer_by_id(session, id)
-    
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
-        
+
     return customer

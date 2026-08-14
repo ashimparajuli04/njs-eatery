@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from auth.services.auth_service import get_current_active_user
@@ -10,7 +10,7 @@ from service_flow.orderitem.services.orderitem_services import delete_order_item
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
-router = APIRouter(prefix="/orderitem", tags=["order-items"])
+router = APIRouter(prefix="/order-items", tags=["order-items"])
     
 @router.delete(
     "/{id}",
@@ -22,8 +22,5 @@ def delete_order_item(
     session: SessionDep,
 ):
     orderitem = get_order_item_by_id(session, id)
-
-    if not orderitem:
-        raise HTTPException(status_code=404, detail="order item not found")
 
     delete_order_item_hard(session, orderitem)

@@ -5,7 +5,7 @@ from sqlmodel import Session
 from auth.services.auth_service import require_admin
 from database import get_session
 
-from service_flow.diningtable.schemas.dining_table import DiningTableCreate
+from service_flow.diningtable.schemas.dining_table import DiningTableCreate, DiningTableDetail
 
 from service_flow.diningtable.services.diningtable_service import create_table, delete_diningtable_hard, get_table_by_number
 
@@ -15,8 +15,8 @@ SessionDep = Annotated[Session, Depends(get_session)]
 router = APIRouter(prefix="/admin/tables", tags=["tables"])
 
 @router.post(
-    "/add-table",
-    response_model=DiningTableCreate,
+    "",
+    response_model=DiningTableDetail,
     status_code=201,
     dependencies=[Depends(require_admin)]
 )
@@ -41,9 +41,6 @@ def delete_table(
     table_number: int,
     session: SessionDep,
 ):
-    table = get_table_by_number(session, table_number)
-
-    if not table:
-        raise HTTPException(status_code=404, detail="table not found")
+    table = get_table_by_number(session, table_number, "table not found")
 
     delete_diningtable_hard(session, table)

@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlmodel import SQLModel
+from sqlmodel import Field, SQLModel
 from service_flow.order.schemas.order import OrderRead
 
 class TableSessionCreate(SQLModel):
@@ -16,7 +16,7 @@ class TableSessionRead(SQLModel):
     final_bill: float | None = None
     started_at: datetime
     ended_at: datetime | None = None
-    orders: list[OrderRead] = []
+    orders: list[OrderRead] = Field(default_factory=list)
     
 class TableSessionPagination(SQLModel):
     id: int
