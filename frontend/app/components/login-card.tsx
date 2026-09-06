@@ -121,18 +121,18 @@ export function LoginCard() {
 
       {/* LEFT IMAGE with gradient overlay - Desktop always visible */}
       <div className="hidden md:flex flex-1 relative items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent dark:from-stone-900/60 dark:to-transparent z-10" />
         <Image
           src="/hello.svg"
           alt="NJ'S Café and Restaurant"
           fill
-          className="object-contain transition-transform duration-700 hover:scale-105"
+          className="object-contain transition-transform duration-700 hover:scale-105 dark:invert"
           priority
         />
         
         {/* Floating coffee icon */}
         <div className="absolute bottom-8 left-8 z-20 animate-bounce">
-          <Coffee className="h-8 w-8 text-amber-700/30" />
+          <Coffee className="h-8 w-8 text-amber-600" />
         </div>
       </div>
 
@@ -145,7 +145,7 @@ export function LoginCard() {
               src="/hello.svg"
               alt="NJ'S Café and Restaurant"
               fill
-              className="object-contain"
+              className="object-contain dark:invert"
               priority
             />
           </div>
@@ -197,7 +197,7 @@ export function LoginCard() {
               </span>
               <Button
                 variant="link"
-                className="text-amber-700 hover:text-amber-800 font-semibold p-0 h-auto"
+                className="text-amber-600 hover:text-amber-700 font-semibold p-0 h-auto"
                 onClick={() =>
                   switchMode(authMode === "login" ? "signup" : "login")
                 }

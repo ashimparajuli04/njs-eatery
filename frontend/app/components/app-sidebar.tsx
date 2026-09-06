@@ -97,23 +97,23 @@ export function AppSidebar() {
 
   return (
     <Sidebar variant="sidebar" collapsible="icon">
-      <SidebarHeader className="border-b border-stone-200 pb-4">
+      <SidebarHeader className="border-b border-stone-200 pb-4 dark:border-stone-800">
         {open && (
           <SidebarMenuItem>
             <div className="flex justify-between items-start w-full px-2">
               <div className="flex-1">
                 
-                <h2 className="text-xl font-bold text-stone-900 leading-tight" style={{ fontFamily: 'Georgia, serif' }}>
+                <h2 className="text-xl font-bold text-stone-900 leading-tight dark:text-stone-100" style={{ fontFamily: 'Georgia, serif' }}>
                   NJ&apos;S Café
                 </h2>
-                <p className="text-xs text-stone-600 tracking-wide">& Restaurant</p>
+                <p className="text-xs text-stone-600 tracking-wide dark:text-stone-400">& Restaurant</p>
               </div>
               {/* X button - hidden on mobile, visible on desktop */}
               <button
                 onClick={() => setOpen(false)}
-                className="hidden md:flex items-center gap-2 p-1.5 hover:bg-stone-100 rounded transition-colors"
+                className="hidden md:flex items-center gap-2 p-1.5 hover:bg-stone-100 rounded transition-colors dark:hover:bg-stone-800"
               >
-                <X className="h-4 w-4 text-stone-600" />
+                <X className="h-4 w-4 text-stone-600 dark:text-stone-400" />
               </button>
             </div>
           </SidebarMenuItem>
