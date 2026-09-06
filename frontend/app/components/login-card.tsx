@@ -166,7 +166,7 @@ export function LoginCard() {
       {/* RIGHT CARD with animation - Always visible on desktop, conditional on mobile */}
       <Card className={`
         ${showMobileForm ? 'flex' : 'hidden md:flex'}
-        flex-1 min-h-[28rem] shadow-none md:border-l-2 border-stone-200/50 animate-in slide-in-from-right duration-500
+        flex-1 min-h-[28rem] shadow-none md:border-l-2 border-stone-200/50 dark:border-stone-700/50 animate-in slide-in-from-right duration-500
       `}>
 
         <CardHeader className="space-y-3 px-6 pt-6">

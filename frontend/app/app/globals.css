@@ -128,3 +128,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: oklch(0.985 0 0);
+  -webkit-box-shadow: 0 0 0 1000px oklch(0.269 0 0) inset;
+  caret-color: oklch(0.985 0 0);
+}
