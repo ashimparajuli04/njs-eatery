@@ -24,17 +24,24 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [status, setStatus] = useState<AuthStatus>(() => {
-    if (typeof window === "undefined") return "loading";
-    return localStorage.getItem("access_token") ? "loading" : "unauthenticated";
-  });
+  const [status, setStatus] = useState<AuthStatus>("unauthenticated");
+  const [ready, setReady] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) return;
-
     let cancelled = false;
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+      setUser(null);
+      setStatus("unauthenticated");
+      setReady(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setStatus("loading");
     api
       .get<User>("/users/me")
       .then((res) => {
@@ -52,6 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Network failure or 5xx: don't redirect — the protected gate shows a retry screen.
           setStatus("error");
         }
+      })
+      .finally(() => {
+        if (!cancelled) setReady(true);
       });
 
     return () => {
@@ -61,15 +71,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (
+      ready &&
       status === "unauthenticated" &&
       window.location.pathname !== "/login"
     ) {
       router.replace("/login");
     }
-  }, [status, router]);
+  }, [ready, status, router]);
 
   const retry = useCallback(() => {
     setStatus("loading");
+    setReady(false);
     setAttempt((a) => a + 1);
   }, []);
 
