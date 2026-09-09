@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export function LoginCard() {
   const router = useRouter()
@@ -122,6 +123,9 @@ export function LoginCard() {
       {/* LEFT IMAGE with gradient overlay - Desktop always visible */}
       <div className="hidden md:flex flex-1 relative items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent dark:from-stone-900/60 dark:to-transparent z-10" />
+        <div className="absolute top-3 right-3 z-20">
+          <ThemeToggle />
+        </div>
         <Image
           src="/hello.svg"
           alt="NJ'S Café and Restaurant"
@@ -139,6 +143,10 @@ export function LoginCard() {
       {/* MOBILE: Welcome Screen with SVG - shown when form is hidden */}
       {!showMobileForm && (
         <div className="md:hidden w-full min-h-[500px] relative flex flex-col items-center justify-center p-8 animate-in fade-in duration-500">
+          {/* Theme toggle */}
+          <div className="absolute top-3 right-3 z-20">
+            <ThemeToggle />
+          </div>
           {/* Restaurant SVG/Logo */}
           <div className="relative w-full h-96 mb-8">
             <Image
@@ -208,7 +216,7 @@ export function LoginCard() {
           </CardAction>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="px-6">
           <div className="flex flex-col gap-5">
 
             {/* LOGIN */}
@@ -355,7 +363,7 @@ export function LoginCard() {
           </div>
         </CardContent>
 
-        <CardFooter className="flex-col gap-3 pt-2">
+        <CardFooter className="flex-col gap-3 pt-2 px-6">
 
           {/* LOGIN BUTTON */}
           {authMode === "login" && (
