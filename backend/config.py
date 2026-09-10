@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     cors_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:3000",
         "https://njseatery.vercel.app",
+        "https://njseatery-v2.vercel.app",
+        "http://localhost:3001",
     ]
     backend_port: int = 8000
     frontend_port: int = 3000
